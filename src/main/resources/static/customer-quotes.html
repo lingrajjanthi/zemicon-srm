@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Zemicon - Customer Quotes</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body { font-family:'Inter',sans-serif; background:#f0f5f5; margin:0; padding:0; }
+header { display:flex; align-items:center; padding:12px 20px; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+header img { height:50px; margin-right:12px; }
+header h1 { margin:0; color:#008881; }
+header button { margin-left:auto; background:#008881; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; }
+.container { max-width:1000px; margin:30px auto; background:#fff; padding:30px; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.1);}
+h2 { text-align:center; color:#008881; margin-bottom:20px; }
+select { width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-bottom:15px; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th, td { border:1px solid #ddd; padding:10px; text-align:center; }
+th { background:#008881; color:#fff; }
+</style>
+</head>
+<body>
+<header>
+<img src="/images/zemicon.jpg" alt="Zemicon Logo"/>
+<h1>Zemicon Electronics</h1>
+<button onclick="history.back()">⬅ Back</button>
+</header>
+
+<div class="container">
+<h2>📋 Customer Quotes</h2>
+<div>
+<label>Select Customer:</label>
+<select id="customerSelect" onchange="loadQuotes()">
+<option value="">-- Select Customer --</option>
+</select>
+</div>
+
+<div id="quoteContainer"></div>
+</div>
+
+<script>
+// Load customers
+async function loadCustomers() {
+    const res = await fetch('/api/customer-quotes/all-customers');
+    const customers = await res.json();
+    const select = document.getElementById('customerSelect');
+    customers.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.id;
+        option.textContent = `${c.customerCode} | ${c.name}`;
+        select.appendChild(option);
+    });
+}
+
+// Load quotes for selected customer
+async function loadQuotes() {
+    const customerId = document.getElementById('customerSelect').value;
+    const container = document.getElementById('quoteContainer');
+    container.innerHTML = "";
+
+    if (!customerId) return;
+
+    const res = await fetch(`/api/customer-quotes/${customerId}`);
+    const data = await res.json();
+
+    for (const [mpn, quotes] of Object.entries(data)) {
+        let html = `<h3>Product: ${mpn}</h3>`;
+        html += `<table>
+        <thead>
+        <tr>
+        <th>Vendor</th><th>Unit Price</th><th>Lead Time</th><th>Date Code</th><th>MOQ</th><th>Remarks</th><th>Submitted At</th>
+        </tr>
+        </thead><tbody>`;
+
+        quotes.forEach(q => {
+            html += `<tr>
+            <td>${q.vendorName}</td>
+            <td>${q.unitPrice !== null ? q.unitPrice : 'NA'}</td>
+            <td>${q.leadTimeWeeks !== null ? q.leadTimeWeeks : 'NA'}</td>
+            <td>${q.dateCode || 'NA'}</td>
+            <td>${q.moq !== null ? q.moq : 'NA'}</td>
+            <td>${q.remarks || ''}</td>
+            <td>${q.submittedAt ? new Date(q.submittedAt).toLocaleString() : ''}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML += html;
+    }
+}
+
+loadCustomers();
+</script>
+</body>
+</html>

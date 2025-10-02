@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Zemicon - Upload RFQ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', Arial, sans-serif;
+      background: linear-gradient(135deg, #3ba865, #0d8c73);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 40px;
+    }
+    header {
+      width: 100%;
+      background: #ffffffdd;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header img { height: 50px; }
+    header h1 { font-size: 22px; color: #006f6a; margin:0; font-weight:700; }
+    header button {
+      margin-left:auto;
+      background:#008881;
+      color:#fff;
+      border:none;
+      padding:10px 16px;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      transition: 0.3s;
+    }
+    header button:hover { background:#006f6a; }
+
+    .container {
+      background: #fff;
+      padding: 28px;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      width: 95%;
+      max-width: 950px;
+      margin-top: 28px;
+      animation: fadeIn .6s ease;
+    }
+    h2 { text-align:center; color:#008881; margin-bottom:20px; }
+    .field { margin-bottom:15px; }
+    label { font-weight:600; display:block; margin-bottom:5px; color:#333; }
+    input, select, button { width:100%; padding:10px; border:1px solid #ccc; border-radius:10px; font-size:14px; }
+    button.action { background:#008881; color:#fff; font-weight:600; cursor:pointer; transition:0.3s; }
+    button.action:hover { background:#006f6a; }
+    .msg { margin-top:15px; padding:10px; border-radius:8px; display:block; text-align:center; }
+    table { width:100%; margin-top:20px; border-collapse:collapse; font-size:14px; }
+    th, td { border:1px solid #ddd; padding:10px; text-align:center; }
+    th { background:#008881; color:#fff; }
+    .section { margin-top:30px; }
+    .toggle-buttons {
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:10px;
+      flex-wrap: wrap;
+    }
+    .toggle-buttons button { flex-shrink:0; width:auto; padding:8px 12px; border-radius:10px; font-weight:600; }
+    .hidden { display:none; }
+    @media (max-width:600px) {
+      .toggle-buttons { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <img src="/images/zemicon.jpg" alt="Zemicon Logo" onerror="this.src='logo.png'"/>
+  <h1>Zemicon Electronics — Customer RFQ</h1>
+  <button onclick="if(history.length>1){history.back();}else{alert('No previous page')}">⬅ Back</button>
+</header>
+
+<div class="container">
+  <h2>📂 Upload Customer RFQ</h2>
+
+  <!-- Customer Selection -->
+  <div class="field">
+    <label for="customer">Select Customer</label>
+    <input list="customerOptions" id="customer" placeholder="Type to search customer..." />
+    <datalist id="customerOptions"></datalist>
+  </div>
+
+  <!-- Buttons -->
+  <div class="toggle-buttons">
+    <button onclick="showAddCustomerForm()">➕ Add New Customer</button>
+    <button onclick="viewAllCustomers()">📋 View All Customers</button>
+    <button onclick="document.getElementById('manualRFQForm').classList.toggle('hidden')">📝 Add Manual RFQ</button>
+    <button onclick="showCustomerRequirements()">📑 Show Customer Requirements</button>
+  </div>
+
+  <!-- Upload Excel -->
+  <div class="field">
+    <label for="file">Upload RFQ Excel</label>
+    <input type="file" id="file" accept=".xls,.xlsx">
+  </div>
+
+  <button class="action" onclick="uploadRFQ()">⬆ Upload RFQ</button>
+  <div id="msg" class="msg hidden"></div>
+
+  <!-- Requirement List -->
+  <div id="reqList" class="section hidden"></div>
+
+  <!-- Manual RFQ Form -->
+  <div id="manualRFQForm" class="section hidden">
+    <h3>➕ Add Manual RFQ</h3>
+    <div class="field"><label>Manufacturer</label><input id="rfqManufacturer"></div>
+    <div class="field"><label>MPN</label><input id="rfqMpn"></div>
+    <div class="field"><label>Quantity</label><input type="number" id="rfqQty"></div>
+    <div class="field"><label>Target Price</label><input type="number" step="0.01" id="rfqTargetPrice"></div>
+    <div class="field"><label>Remarks</label><input id="rfqRemarks"></div>
+    <div class="field"><label>Status</label>
+      <select id="rfqStatus">
+        <option value="NEW">NEW</option>
+        <option value="OPEN">OPEN</option>
+        <option value="PENDING">PENDING</option>
+      </select>
+    </div>
+    <button class="action" onclick="addManualRFQ()">💾 Save RFQ</button>
+  </div>
+
+  <!-- Customer Registration Form -->
+  <div id="addCustomerForm" class="section hidden">
+    <h3>📝 Register New Customer</h3>
+    <div class="field"><label>Name</label><input type="text" id="newName"></div>
+    <div class="field"><label>Email</label><input type="email" id="newEmail"></div>
+    <div class="field"><label>Phone</label><input type="text" id="newPhone"></div>
+    <div class="field"><label>City</label><input type="text" id="newCity"></div>
+    <div class="field"><label>Country</label><input type="text" id="newCountry"></div>
+    <button class="action" onclick="addCustomer()">➕ Save Customer</button>
+  </div>
+
+  <!-- All Customers List -->
+  <div id="customerList" class="section hidden"></div>
+</div>
+
+<script>
+  function hideAllSections() {
+    document.getElementById("reqList").classList.add("hidden");
+    document.getElementById("addCustomerForm").classList.add("hidden");
+    document.getElementById("customerList").classList.add("hidden");
+    document.getElementById("manualRFQForm").classList.add("hidden");
+    document.getElementById("msg").classList.add("hidden");
+  }
+
+  async function loadCustomers() {
+    try {
+      const res = await fetch('/api/customer/all');
+      const customers = await res.json();
+      const datalist = document.getElementById('customerOptions');
+      datalist.innerHTML = '';
+      customers.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.name;
+        datalist.appendChild(option);
+      });
+    } catch (err) { console.error(err); }
+  }
+
+  async function uploadRFQ() {
+    const msgEl = document.getElementById('msg');
+    const customerName = document.getElementById('customer').value;
+    const file = document.getElementById('file').files[0];
+    hideAllSections();
+    if (!customerName || !file) {
+      msgEl.textContent = "❌ Please select a customer and choose a file.";
+      msgEl.className = "msg";
+      msgEl.classList.remove("hidden");
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('customerName', customerName);
+    try {
+      const res = await fetch('/api/requirements/upload', { method: 'POST', body: formData });
+      msgEl.textContent = res.ok ? "✅ RFQ uploaded successfully!" : "❌ Error uploading RFQ.";
+      msgEl.className = "msg";
+      msgEl.classList.remove("hidden");
+    } catch (err) {
+      console.error(err);
+      msgEl.textContent = "❌ Error uploading RFQ.";
+      msgEl.className = "msg";
+      msgEl.classList.remove("hidden");
+    }
+  }
+
+  async function showCustomerRequirements() {
+    const customerName = document.getElementById('customer').value.trim();
+    if(!customerName){ alert("Select a customer first"); return; }
+    hideAllSections();
+    try {
+      const res = await fetch(`/api/requirements/by-customer/${encodeURIComponent(customerName)}`);
+      const reqs = await res.json();
+      let html = "<h3>📑 Requirements</h3>";
+      if (reqs.length === 0) {
+        html += "<p>No requirements found for this customer.</p>";
+      } else {
+        html += `<table><thead><tr>
+          <th>Manufacturer</th><th>MPN</th><th>Qty</th><th>Target Price</th><th>Remarks</th><th>Date</th><th>Status</th>
+        </tr></thead><tbody>`;
+        reqs.forEach(r=>{
+          html+=`<tr>
+            <td>${r.manufacturer||""}</td>
+            <td>${r.mpn||""}</td>
+            <td>${r.quantity||""}</td>
+            <td>${r.targetPrice||""}</td>
+            <td>${r.remarks||""}</td>
+            <td>${r.createdAt?new Date(r.createdAt).toLocaleString():""}</td>
+            <td>${r.status||""}</td>
+          </tr>`;
+        });
+        html+="</tbody></table>";
+      }
+      const div = document.getElementById("reqList");
+      div.innerHTML = html;
+      div.classList.remove("hidden");
+    } catch(err){ console.error(err); }
+  }
+
+  function showAddCustomerForm() {
+    hideAllSections();
+    document.getElementById("addCustomerForm").classList.remove("hidden");
+  }
+
+  async function addCustomer() {
+    const customer = {
+      name: document.getElementById('newName').value,
+      email: document.getElementById('newEmail').value,
+      phone: document.getElementById('newPhone').value,
+      city: document.getElementById('newCity').value,
+      country: document.getElementById('newCountry').value
+    };
+    try {
+      const res = await fetch('/api/customer/add',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(customer)
+      });
+      if(res.ok){
+        alert("✅ Customer added successfully!");
+        loadCustomers();
+        hideAllSections();
+      } else {
+        const err = await res.text();
+        alert("❌ Error: " + err);
+      }
+    } catch(err){ alert("❌ Failed to add customer."); }
+  }
+
+  async function viewAllCustomers() {
+    hideAllSections();
+    try {
+      const res = await fetch('/api/customer/all');
+      const customers = await res.json();
+      let html = "<h3>📋 All Customers</h3><table><thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Phone</th><th>City</th><th>Country</th></tr></thead><tbody>";
+      customers.forEach(c=>{
+        html+=`<tr>
+          <td>${c.customerCode||""}</td>
+          <td>${c.name||""}</td>
+          <td>${c.email||""}</td>
+          <td>${c.phone||""}</td>
+          <td>${c.city||""}</td>
+          <td>${c.country||""}</td>
+        </tr>`;
+      });
+      html+="</tbody></table>";
+      const listDiv = document.getElementById("customerList");
+      listDiv.innerHTML = html;
+      listDiv.classList.remove("hidden");
+    } catch(err){ console.error(err); }
+  }
+
+  async function addManualRFQ() {
+    const customerName = document.getElementById('customer').value.trim();
+    if(!customerName){ alert("Select a customer first"); return; }
+    const rfq = {
+      manufacturer: document.getElementById('rfqManufacturer').value.trim(),
+      mpn: document.getElementById('rfqMpn').value.trim(),
+      quantity: parseInt(document.getElementById('rfqQty').value)||0,
+      targetPrice: parseFloat(document.getElementById('rfqTargetPrice').value)||0,
+      remarks: document.getElementById('rfqRemarks').value.trim(),
+      status: document.getElementById('rfqStatus').value
+    };
+    try {
+      const res = await fetch(`/api/requirements/add?customerName=${encodeURIComponent(customerName)}`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(rfq)
+      });
+      if(res.ok){
+        alert("✅ Manual RFQ added successfully!");
+      } else {
+        const err = await res.text();
+        alert("❌ Error: "+err);
+      }
+    } catch(err){
+      console.error(err);
+      alert("❌ Failed to add RFQ");
+    }
+  }
+
+  // Initial load
+  loadCustomers();
+</script>
+</body>
+</html>

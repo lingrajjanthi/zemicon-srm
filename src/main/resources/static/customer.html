@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Zemicon - Customer Registration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f0f5f5; margin:0; padding:0; }
+    .container {
+      max-width: 600px; margin: 50px auto; background:#fff;
+      padding: 30px; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.1);
+    }
+    h2 { text-align:center; color:#008881; }
+    .field { margin-bottom:15px; }
+    label { font-weight:600; display:block; margin-bottom:5px; }
+    input {
+      width:100%; padding:10px; border:1px solid #ccc;
+      border-radius:8px; font-size:14px;
+    }
+    button {
+      background:#008881; color:#fff; padding:12px 20px; border:none;
+      border-radius:8px; font-size:15px; font-weight:600; cursor:pointer;
+      transition:0.3s; margin-right:10px;
+    }
+    button:hover { background:#006f6a; }
+    .msg { margin-top:15px; font-size:14px; }
+    table { width:100%; margin-top:20px; border-collapse:collapse; font-size:14px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:center; }
+    th { background:#008881; color:#fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📝 Register New Customer</h2>
+    <form id="customerForm">
+      <div class="field"><label>Name</label><input type="text" id="name" required></div>
+      <div class="field"><label>Email</label><input type="email" id="email" required></div>
+      <div class="field"><label>Phone</label><input type="text" id="phone"></div>
+      <div class="field"><label>City</label><input type="text" id="city"></div>
+      <div class="field"><label>Country</label><input type="text" id="country"></div>
+      <button type="submit">➕ Add Customer</button>
+      <button type="button" id="viewBtn">📋 View Customers</button>
+    </form>
+    <div id="msg" class="msg"></div>
+	<div style="margin-top:20px; text-align:center;">
+		<a href="upload.html" id="backBtn" style="display:none;
+	     background:#008881; color:#fff; padding:10px 18px;
+	     border-radius:8px; text-decoration:none; font-weight:600;">
+			⬅️ Back to RFQ Upload
+		</a>
+	</div>
+
+
+    <!-- Hidden initially -->
+    <div id="customerList" style="display:none;"></div>
+  </div>
+
+  <script>
+    // Register Customer
+    document.getElementById('customerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const customer = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        city: document.getElementById('city').value,
+        country: document.getElementById('country').value
+      };
+
+      const res = await fetch('/api/customer/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customer)
+      });
+
+      const msgEl = document.getElementById('msg');
+		if (res.ok) {
+			const data = await res.json();
+			msgEl.textContent = `✅ Customer added successfully: ${data.customerCode}`;
+			msgEl.style.color = "green";
+
+			// Show back button after success
+			document.getElementById('backBtn').style.display = "inline-block";
+		}
+		else {
+			const err = await res.text();
+			msgEl.textContent = `❌ Error: ${err}`;
+			msgEl.style.color = "red";
+		}
+	});
+
+    // View Customers only when button is clicked
+    document.getElementById('viewBtn').addEventListener('click', async () => {
+      const res = await fetch('/api/customer/all');
+      const customers = await res.json();
+      let html = "<table><thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Phone</th><th>City</th><th>Country</th></tr></thead><tbody>";
+      customers.forEach(c => {
+        html += `<tr>
+          <td>${c.customerCode}</td>
+          <td>${c.name}</td>
+          <td>${c.email}</td>
+          <td>${c.phone || ""}</td>
+          <td>${c.city || ""}</td>
+          <td>${c.country || ""}</td>
+        </tr>`;
+      });
+      html += "</tbody></table>";
+      const listDiv = document.getElementById('customerList');
+      listDiv.innerHTML = html;
+      listDiv.style.display = "block"; // show when button clicked
+    });
+  </script>
+</body>
+</html>

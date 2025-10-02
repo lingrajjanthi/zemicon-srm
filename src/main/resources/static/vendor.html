@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zemicon - Upload Vendor Quotes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; font-family:'Inter',Arial,sans-serif; background:linear-gradient(135deg,#3ba865,#0d8c73); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding-bottom:40px; }
+  header { width:100%; background:#ffffffdd; backdrop-filter:blur(6px); box-shadow:0 2px 10px rgba(0,0,0,0.08); padding:12px 24px; display:flex; align-items:center; gap:12px; }
+  header img { height:50px; }
+  header h1 { font-size:22px; color:#006f6a; margin:0; font-weight:700; }
+  .container { background:#fff; padding:28px; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.12); width:950px; margin-top:28px; animation:fadeIn .6s ease; }
+  .row { display:flex; gap:16px; margin-bottom:12px; }
+  .col { flex:1; }
+  label { display:block; font-weight:600; margin-bottom:6px; color:#333; }
+  select,input[type="text"],input[type="file"],input[type="number"]{width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;font-size:14px;}
+  button { background:#008881;color:#fff;border:none;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:600;margin-right:8px;transition:background .3s; }
+  button:hover { background:#006f6a; }
+  button.secondary{background:#f1f1f1;color:#333;}
+  button.secondary:hover{background:#ccc;}
+  .msg{margin-top:12px;padding:10px;border-radius:8px;display:none;}
+  .msg.success{background:#e6f9f6;color:#006a5f;}
+  .msg.error{background:#fff0f0;color:#a10808;}
+  table{width:100%;border-collapse:collapse;margin-top:18px;}
+  th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px;}
+  th{background:#008881;color:#fff;}
+  .small{font-size:12px;color:#666;}
+  .toggle-link{color:#008881;font-weight:600;cursor:pointer;text-decoration:underline;font-size:13px;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="/images/zemicon.jpg" alt="Zemicon Logo" onerror="this.src='logo.png'"/>
+  <h1>Zemicon Electronics — Vendor Quotes</h1>
+</header>
+
+<div class="container">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="font-weight:700; color:#006f6a; line-height:1.4;">
+      Upload Vendor Quotes<br>
+      <span style="font-size:13px; color:#555;">Upload an Excel file with latest vendor quotes (Unit Price, Lead Time, Date Code, MOQ, Remarks).</span>
+    </div>
+    <div><a href="index.html" style="text-decoration:none"><button class="secondary">⬅ Back</button></a></div>
+  </div>
+
+  <!-- Toggle Add Vendor -->
+  <div style="margin-bottom:14px;">
+    <span class="toggle-link" id="showAddVendor">➕ Add New Vendor</span>
+  </div>
+
+  <div id="addVendorDiv" class="hidden">
+    <div class="row">
+      <div class="col">
+        <label for="newVendorName">Vendor Name</label>
+        <input id="newVendorName" type="text" placeholder="Enter vendor name" />
+      </div>
+      <div class="col">
+        <label for="newVendorEmail">Vendor Email</label>
+        <input id="newVendorEmail" type="text" placeholder="Enter email (optional)" />
+      </div>
+      <div style="flex:0 0 120px; display:flex; align-items:end;">
+        <button id="addVendorBtn">Add Vendor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor & Customer Selection -->
+  <div class="row">
+    <div class="col">
+      <label for="vendorSelect">Select Vendor</label>
+      <select id="vendorSelect"><option value="">-- Select vendor --</option></select>
+    </div>
+    <div class="col">
+      <label for="customerSelect">Select Customer</label>
+      <select id="customerSelect"><option value="">-- Select customer --</option></select>
+    </div>
+    <div style="flex:0 0 240px;">
+      <label for="file">Excel File</label>
+      <input id="file" type="file" accept=".xls,.xlsx" />
+    </div>
+  </div>
+
+  <div style="margin-top:12px;">
+    <button id="uploadBtn">⬆ Upload Quotes</button>
+    <button id="viewBtn" class="secondary">📋 View Latest Quotes</button>
+  </div>
+
+  <!-- Manual Quote Section -->
+  <p style="margin-top:18px;">
+    Or <a href="#" class="toggle-link" onclick="showManualQuoteForm()">➕ Add Quote Manually</a>
+  </p>
+  <div id="manualQuoteForm" class="hidden" style="margin-top:12px;">
+    <h3 style="margin-bottom:10px; color:#006f6a;">📝 Manual Vendor Quote</h3>
+    <div class="row"><div class="col"><label>Manufacturer</label><input type="text" id="quoteManufacturer"></div></div>
+    <div class="row"><div class="col"><label>MPN</label><input type="text" id="quoteMpn"></div></div>
+    <div class="row"><div class="col"><label>Quantity</label><input type="number" id="quoteQty"></div></div>
+    <div class="row"><div class="col"><label>Unit Price</label><input type="number" step="0.01" id="quoteUnitPrice"></div></div>
+    <div class="row"><div class="col"><label>Lead Time (weeks)</label><input type="number" id="quoteLeadTime"></div></div>
+    <div class="row"><div class="col"><label>MOQ</label><input type="number" id="quoteMoq"></div></div>
+    <div class="row"><div class="col"><label>Date Code</label><input type="text" id="quoteDateCode"></div></div>
+    <div class="row"><div class="col"><label>Remarks</label><input type="text" id="quoteRemarks"></div></div>
+    <div style="margin-top:10px;">
+      <button class="action" onclick="submitManualQuote()">💾 Save Quote</button>
+    </div>
+  </div>
+
+  <div id="message" class="msg"></div>
+  <div id="quotesDiv"></div>
+</div>
+
+<script>
+  const addVendorToggle=document.getElementById('showAddVendor');
+  const addVendorDiv=document.getElementById('addVendorDiv');
+  addVendorToggle.addEventListener('click',()=>addVendorDiv.classList.toggle('hidden'));
+
+  async function loadVendors(){ const res=await fetch('/api/vendor/all'); const vendors=await res.json(); const sel=document.getElementById('vendorSelect'); sel.innerHTML='<option value="">-- Select vendor --</option>'; vendors.forEach(v=>{const o=document.createElement('option');o.value=v.id;o.text=v.name;sel.appendChild(o);}); }
+  async function loadCustomers(){ const res=await fetch('/api/customer/all'); const customers=await res.json(); const sel=document.getElementById('customerSelect'); sel.innerHTML='<option value="">-- Select customer --</option>'; customers.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.text=c.customerCode?`${c.customerCode} | ${c.name}`:c.name;sel.appendChild(o);}); }
+
+  // ✅ Add Vendor
+  document.getElementById('addVendorBtn').addEventListener('click',async()=>{
+    const name=document.getElementById('newVendorName').value.trim();
+    const email=document.getElementById('newVendorEmail').value.trim();
+    const msgEl=document.getElementById('message'); msgEl.style.display='none';
+    if(!name){msgEl.textContent='Enter vendor name';msgEl.className='msg error';msgEl.style.display='block';return;}
+    try{
+      const res=await fetch('/api/vendor/add-vendor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email})});
+      const data=await res.json().catch(()=>({}));
+      if(res.ok){ msgEl.textContent=`Vendor "${data.name||name}" added successfully`; msgEl.className='msg success'; msgEl.style.display='block'; document.getElementById('newVendorName').value=''; document.getElementById('newVendorEmail').value=''; addVendorDiv.classList.add('hidden'); loadVendors(); }
+      else if(res.status===409){ msgEl.textContent=data.error||'Vendor already exists'; msgEl.className='msg error'; msgEl.style.display='block'; }
+      else { msgEl.textContent='Failed to add vendor'; msgEl.className='msg error'; msgEl.style.display='block'; }
+    }catch(err){ msgEl.textContent=err.message; msgEl.className='msg error'; msgEl.style.display='block'; }
+  });
+
+  // Upload Quotes
+  document.getElementById('uploadBtn').addEventListener('click',async()=>{
+    const msgEl=document.getElementById('message'); msgEl.style.display='none';
+    const vendorId=document.getElementById('vendorSelect').value; const customerId=document.getElementById('customerSelect').value; const file=document.getElementById('file').files[0];
+    if(!vendorId||!customerId||!file){ msgEl.textContent='Please select vendor, customer and file.'; msgEl.className='msg error'; msgEl.style.display='block'; return; }
+    const form=new FormData(); form.append('file',file);
+    try{ const url=`/api/vendor/upload?vendorId=${vendorId}&customerId=${customerId}`; const res=await fetch(url,{method:'POST',body:form}); const text=await res.text(); msgEl.textContent=text||(res.ok?'Upload successful':'Upload failed'); msgEl.className=res.ok?'msg success':'msg error'; msgEl.style.display='block'; if(res.ok) viewQuotes(); }catch(err){ msgEl.textContent=err.message; msgEl.className='msg error'; msgEl.style.display='block'; }
+  });
+
+  async function viewQuotes(){ const vendorId=document.getElementById('vendorSelect').value; const customerId=document.getElementById('customerSelect').value; const div=document.getElementById('quotesDiv'); div.innerHTML=''; if(!vendorId||!customerId){ div.innerHTML='<p class="small">Select vendor and customer to view latest quotes.</p>'; return; }
+    try{ const res=await fetch(`/api/vendor/quotes?vendorId=${vendorId}&customerId=${customerId}`); if(!res.ok){ div.innerHTML='<p class="small">No quotes found</p>'; return;} const rows=await res.json(); if(!rows||rows.length===0){div.innerHTML='<p class="small">No quotes found</p>';return;} let html='<table><thead><tr><th>MPN</th><th>Manufacturer</th><th>Unit Price</th><th>Lead Time (w)</th><th>Date Code</th><th>MOQ</th><th>Remarks</th><th>Submitted At</th></tr></thead><tbody>'; rows.forEach(r=>{ html+=`<tr><td>${r.requirement?.mpn||''}</td><td>${r.requirement?.manufacturer||''}</td><td>${r.unitPrice??'NA'}</td><td>${r.leadTimeWeeks??'NA'}</td><td>${r.dateCode||''}</td><td>${r.moq??'NA'}</td><td>${r.remarks||''}</td><td>${r.submittedAt?new Date(r.submittedAt).toLocaleString():''}</td></tr>`;}); html+='</tbody></table>'; div.innerHTML=html; }catch(err){ div.innerHTML='<p class="small">Error loading quotes</p>'; console.error(err);} }
+
+  // Toggle Manual Quote form
+  function showManualQuoteForm(){ document.getElementById("manualQuoteForm").classList.toggle("hidden"); }
+
+  // Submit Manual Quote
+  async function submitManualQuote() {
+  const vendorSel = document.getElementById('vendorSelect');
+  const customerSel = document.getElementById('customerSelect');
+
+  if (!vendorSel.value || !customerSel.value) {
+    alert("❌ Please select vendor & customer first!");
+    return;
+  }
+
+  // Get exact vendor and customer names from the dropdown
+  const vendorName = vendorSel.options[vendorSel.selectedIndex].text.trim();
+  const customerName = customerSel.options[customerSel.selectedIndex].text.split('|').pop().trim();
+
+  // Build the quote object with proper number conversion
+  const quote = {
+    vendorName,
+    customerName,
+    manufacturer: document.getElementById('quoteManufacturer').value.trim(),
+    mpn: document.getElementById('quoteMpn').value.trim(),
+    quantity: parseInt(document.getElementById('quoteQty').value) || 0,
+    unitPrice: parseFloat(document.getElementById('quoteUnitPrice').value) || 0.0,
+    leadTimeWeeks: parseInt(document.getElementById('quoteLeadTime').value) || 0,
+    moq: parseInt(document.getElementById('quoteMoq').value) || 0,
+    dateCode: document.getElementById('quoteDateCode').value.trim(),
+    remarks: document.getElementById('quoteRemarks').value.trim()
+  };
+
+  try {
+    const res = await fetch(`/api/vendor/add-quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(quote)
+    });
+
+    if (res.ok) {
+      alert("✅ Vendor quote added successfully!");
+      showManualQuoteForm(); // hide the form
+      viewQuotes(); // refresh quotes table
+    } else {
+      const msg = await res.text();
+      alert("❌ Failed to add vendor quote: " + msg);
+    }
+  } catch (err) {
+    alert("❌ Error: " + err.message);
+  }
+}
+
+
+  document.getElementById('viewBtn').addEventListener('click',viewQuotes);
+
+  loadVendors(); loadCustomers();
+</script>
+
+</body>
+</html>

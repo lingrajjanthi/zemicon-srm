@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Zemicon - Compare Quotes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: 'Inter', Arial, sans-serif; background: linear-gradient(135deg, #3ba865, #0d8c73); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+    header { width: 100%; background: #ffffffdd; backdrop-filter: blur(6px); box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 12px 24px; display: flex; align-items: center; justify-content: center; }
+    header img { height: 50px; margin-right: 12px; }
+    header h1 { font-size: 22px; color: #006f6a; font-weight: 700; margin: 0; }
+    .container { background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); width: 90%; max-width: 1000px; margin-top: 40px; text-align: center; animation: fadeIn 0.8s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .field { margin: 16px 0; text-align: left; }
+    label { font-weight: 600; color: #222; display: block; margin-bottom: 6px; }
+    input[type="text"] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 14px; }
+    button { background: #008881; color: #fff; border: none; padding: 12px 22px; border-radius: 10px; cursor: pointer; margin: 8px; font-size: 15px; font-weight: 600; transition: background 0.3s ease, transform 0.2s; }
+    button:hover { background: #006f6a; transform: translateY(-2px); }
+    table { width: 100%; margin-top: 24px; border-collapse: collapse; font-size: 14px; border-radius: 10px; overflow: hidden; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background: #008881; color: #fff; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    .highlight { background: #e6f9f6; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="/images/zemicon.jpg" alt="Zemicon Logo" />
+    <h1>Zemicon Electronics</h1>
+  </header>
+
+  <div class="container">
+    <div style="margin-bottom: 20px; text-align:left">
+      <a href="index.html" style="color:#006f6a;font-weight:600">⬅️ Back to Dashboard</a>
+    </div>
+
+    <p class="sub">⚖️ Compare Quotes (L1 & L2)</p>
+
+    <div class="field">
+      <label for="customerName">Customer Name</label>
+      <input id="customerName" type="text" placeholder="Enter customer name" required />
+    </div>
+    <button id="compareBtn">🔍 Compare</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    document.getElementById('compareBtn').addEventListener('click', async function() {
+      const customerName = document.getElementById('customerName').value.trim();
+      if (!customerName) {
+        alert("Please enter customer name");
+        return;
+      }
+      try {
+        const res = await fetch(`/api/comparison/${encodeURIComponent(customerName)}`);
+        if (!res.ok) throw new Error("Failed to fetch comparison");
+        const data = await res.json();
+
+        let html = `<h3>Customer: ${data.customerName}</h3>`;
+        html += "<table><thead><tr><th>Manufacturer</th><th>MPN</th><th>Qty</th><th>Target</th>";
+
+        data.vendors.forEach(v => html += `<th>${v.name}</th>`);
+        html += "<th>L1</th><th>L2</th></tr></thead><tbody>";
+
+        data.rows.forEach(r => {
+          html += `<tr>
+            <td>${r.manufacturer || ""}</td>
+            <td>${r.mpn || ""}</td>
+            <td>${r.quantity || ""}</td>
+            <td>${r.targetPrice || ""}</td>`;
+
+          data.vendors.forEach(v => {
+            const q = r.vendorQuotes[v.id];
+            if (q) {
+              html += `<td>₹${q.unitPrice || "-"} / ${q.leadTimeWeeks || "-"}w<br>${q.dateCode || ""}<br>MOQ:${q.moq || ""}</td>`;
+            } else {
+              html += "<td>NA</td>";
+            }
+          });
+
+          html += `<td class="highlight">${r.l1Vendor ? r.l1Vendor.vendorName + " (₹" + r.l1Vendor.unitPrice + ")" : "-"}</td>`;
+          html += `<td class="highlight">${r.l2Vendor ? r.l2Vendor.vendorName + " (₹" + r.l2Vendor.unitPrice + ")" : "-"}</td>`;
+          html += "</tr>";
+        });
+
+        html += "</tbody></table>";
+        document.getElementById('results').innerHTML = html;
+      } catch (err) {
+        document.getElementById('results').innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

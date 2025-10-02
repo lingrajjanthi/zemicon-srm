@@ -1,0 +1,66 @@
+<div class="container">
+  <p class="sub">📝 Vendor Response Submission</p>
+
+  <div class="field">
+    <label for="requirementId">Requirement ID</label>
+    <input id="requirementId" type="text" />
+  </div>
+  <div class="field">
+    <label for="vendorId">Vendor ID</label>
+    <input id="vendorId" type="text" />
+  </div>
+  <div class="field">
+    <label for="unitPrice">Unit Price</label>
+    <input id="unitPrice" type="text" />
+  </div>
+  <div class="field">
+    <label for="leadTime">Lead Time (Weeks)</label>
+    <input id="leadTime" type="text" />
+  </div>
+  <div class="field">
+    <label for="dateCode">Date Code</label>
+    <input id="dateCode" type="text" />
+  </div>
+  <div class="field">
+    <label for="moq">MOQ</label>
+    <input id="moq" type="text" />
+  </div>
+  <div class="field">
+    <label for="remarks">Remarks</label>
+    <input id="remarks" type="text" />
+  </div>
+  <button id="submitVendor">Submit Response</button>
+
+  <div id="vendorMsg" class="msg"></div>
+</div>
+
+<script>
+document.getElementById('submitVendor').addEventListener('click', async () => {
+    const requirementId = document.getElementById('requirementId').value;
+    const vendorId = document.getElementById('vendorId').value;
+
+    const response = {
+        unitPrice: parseFloat(document.getElementById('unitPrice').value),
+        leadTimeWeeks: parseInt(document.getElementById('leadTime').value),
+        dateCode: document.getElementById('dateCode').value,
+        moq: parseInt(document.getElementById('moq').value),
+        remarks: document.getElementById('remarks').value
+    };
+
+    try {
+        const res = await fetch(`/api/vendor/submit?requirementId=${requirementId}&vendorId=${vendorId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(response)
+        });
+        const msg = await res.text();
+        const msgEl = document.getElementById('vendorMsg');
+        msgEl.textContent = msg;
+        msgEl.className = res.ok ? "msg success" : "msg error";
+    } catch (err) {
+        const msgEl = document.getElementById('vendorMsg');
+        msgEl.textContent = err.message;
+        msgEl.className = "msg error";
+    }
+});
+</script>
