@@ -6,22 +6,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; font-family: 'Inter', Arial, sans-serif; background: linear-gradient(135deg, #3ba865, #0d8c73); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
-    header { width: 100%; background: #ffffffdd; backdrop-filter: blur(6px); box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 12px 24px; display: flex; align-items: center; justify-content: center; }
-    header img { height: 50px; margin-right: 12px; }
-    header h1 { font-size: 22px; color: #006f6a; font-weight: 700; margin: 0; }
-    .container { background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); width: 90%; max-width: 1000px; margin-top: 40px; text-align: center; animation: fadeIn 0.8s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .field { margin: 16px 0; text-align: left; }
-    label { font-weight: 600; color: #222; display: block; margin-bottom: 6px; }
-    input[type="text"] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 14px; }
-    button { background: #008881; color: #fff; border: none; padding: 12px 22px; border-radius: 10px; cursor: pointer; margin: 8px; font-size: 15px; font-weight: 600; transition: background 0.3s ease, transform 0.2s; }
-    button:hover { background: #006f6a; transform: translateY(-2px); }
-    table { width: 100%; margin-top: 24px; border-collapse: collapse; font-size: 14px; border-radius: 10px; overflow: hidden; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-    th { background: #008881; color: #fff; }
-    tr:nth-child(even) { background: #f9f9f9; }
-    .highlight { background: #e6f9f6; font-weight: 600; }
+    body { margin:0; font-family:'Inter', Arial,sans-serif; background:linear-gradient(135deg,#3ba865,#0d8c73); min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+    header { width:100%; background:#ffffffdd; backdrop-filter: blur(6px); box-shadow:0 2px 10px rgba(0,0,0,0.08); padding:12px 24px; display:flex; align-items:center; justify-content:center; }
+    header img { height:50px; margin-right:12px; }
+    header h1 { font-size:22px; color:#006f6a; font-weight:700; margin:0; }
+    .container { background:#fff; padding:32px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.12); width:90%; max-width:1100px; margin-top:40px; text-align:center; animation:fadeIn 0.8s ease; }
+    @keyframes fadeIn { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+    .field { margin:16px 0; text-align:left; }
+    label { font-weight:600; color:#222; display:block; margin-bottom:6px; }
+    select, input[type="text"] { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
+    button { background:#008881; color:#fff; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin:4px; font-size:14px; font-weight:600; transition:background 0.3s ease, transform 0.2s; }
+    button:hover { background:#006f6a; transform:translateY(-2px); }
+    table { width:100%; margin-top:24px; border-collapse:collapse; font-size:14px; border-radius:10px; overflow:hidden; }
+    th, td { border:1px solid #ddd; padding:10px; text-align:center; }
+    th { background:#008881; color:#fff; }
+    tr:nth-child(even) { background:#f9f9f9; }
+    .highlight { background:#e6f9f6; font-weight:600; }
   </style>
 </head>
 <body>
@@ -31,66 +31,105 @@
   </header>
 
   <div class="container">
-    <div style="margin-bottom: 20px; text-align:left">
+    <div style="margin-bottom:20px; text-align:left">
       <a href="index.html" style="color:#006f6a;font-weight:600">⬅️ Back to Dashboard</a>
     </div>
 
     <p class="sub">⚖️ Compare Quotes (L1 & L2)</p>
 
     <div class="field">
-      <label for="customerName">Customer Name</label>
-      <input id="customerName" type="text" placeholder="Enter customer name" required />
+      <label for="customerSelect">Select Customer</label>
+      <select id="customerSelect">
+        <option value="">-- Select Customer --</option>
+      </select>
     </div>
     <button id="compareBtn">🔍 Compare</button>
-
     <div id="results"></div>
   </div>
 
   <script>
-    document.getElementById('compareBtn').addEventListener('click', async function() {
-      const customerName = document.getElementById('customerName').value.trim();
-      if (!customerName) {
-        alert("Please enter customer name");
+    // Load all customers into dropdown
+    async function loadCustomers() {
+      try {
+        const res = await fetch("/api/customer");
+        if (!res.ok) throw new Error("Failed to fetch customers");
+        const customers = await res.json();
+        const select = document.getElementById("customerSelect");
+        customers.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;      // numeric ID
+          opt.textContent = c.name; // display name
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        alert("Error loading customers: " + err.message);
+      }
+    }
+    loadCustomers();
+
+    // Compare button click
+    document.getElementById('compareBtn').addEventListener('click', async function () {
+      const customerId = document.getElementById('customerSelect').value;
+      if (!customerId) {
+        alert("Please select a customer");
         return;
       }
       try {
-        const res = await fetch(`/api/comparison/${encodeURIComponent(customerName)}`);
+        const res = await fetch(`/api/comparison/${customerId}`);
         if (!res.ok) throw new Error("Failed to fetch comparison");
         const data = await res.json();
 
         let html = `<h3>Customer: ${data.customerName}</h3>`;
-        html += "<table><thead><tr><th>Manufacturer</th><th>MPN</th><th>Qty</th><th>Target</th>";
-
-        data.vendors.forEach(v => html += `<th>${v.name}</th>`);
-        html += "<th>L1</th><th>L2</th></tr></thead><tbody>";
+        html += "<table><thead><tr><th>Manufacturer</th><th>MPN</th><th>Qty</th><th>Target</th><th>Quotes</th><th>L1</th><th>L2</th><th>Status</th></tr></thead><tbody>";
 
         data.rows.forEach(r => {
+          let vendorHtml = "";
+          if (r.vendorQuotes && r.vendorQuotes.length > 0) {
+            r.vendorQuotes.forEach(q => {
+              vendorHtml += `<div><b>${q.vendorName}</b>: ₹${q.unitPrice || "-"} / ${q.leadTimeWeeks || "-"}w (MOQ:${q.moq || "-"})</div>`;
+            });
+          } else {
+            vendorHtml = "NA";
+          }
+
           html += `<tr>
             <td>${r.manufacturer || ""}</td>
             <td>${r.mpn || ""}</td>
             <td>${r.quantity || ""}</td>
-            <td>${r.targetPrice || ""}</td>`;
-
-          data.vendors.forEach(v => {
-            const q = r.vendorQuotes[v.id];
-            if (q) {
-              html += `<td>₹${q.unitPrice || "-"} / ${q.leadTimeWeeks || "-"}w<br>${q.dateCode || ""}<br>MOQ:${q.moq || ""}</td>`;
-            } else {
-              html += "<td>NA</td>";
-            }
-          });
-
-          html += `<td class="highlight">${r.l1Vendor ? r.l1Vendor.vendorName + " (₹" + r.l1Vendor.unitPrice + ")" : "-"}</td>`;
-          html += `<td class="highlight">${r.l2Vendor ? r.l2Vendor.vendorName + " (₹" + r.l2Vendor.unitPrice + ")" : "-"}</td>`;
-          html += "</tr>";
+            <td>${r.targetPrice || ""}</td>
+            <td>${vendorHtml}</td>
+            <td class="highlight">${r.l1Vendor ? r.l1Vendor.vendorName + " (₹" + r.l1Vendor.unitPrice + ")" : "-"}</td>
+            <td class="highlight">${r.l2Vendor ? r.l2Vendor.vendorName + " (₹" + r.l2Vendor.unitPrice + ")" : "-"}</td>
+            <td>
+              <select id="status-${r.requirementId}">
+                <option value="NEW" ${r.status === "NEW" ? "selected" : ""}>NEW</option>
+                <option value="OPEN" ${r.status === "OPEN" ? "selected" : ""}>OPEN</option>
+                <option value="COMPLETED" ${r.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
+              </select>
+              <button onclick="updateStatus(${r.requirementId})">Update</button>
+            </td>
+          </tr>`;
         });
 
         html += "</tbody></table>";
         document.getElementById('results').innerHTML = html;
+
       } catch (err) {
         document.getElementById('results').innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
       }
     });
+
+    // Update RFQ status
+    async function updateStatus(requirementId) {
+      const status = document.getElementById(`status-${requirementId}`).value;
+      try {
+        const res = await fetch(`/api/comparison/update-status/${requirementId}?status=${status}`, { method: "PUT" });
+        const msg = await res.text();
+        alert(msg);
+      } catch (err) {
+        alert("Failed to update status: " + err.message);
+      }
+    }
   </script>
 </body>
 </html>

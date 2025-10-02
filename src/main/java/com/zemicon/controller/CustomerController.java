@@ -44,4 +44,14 @@ public class CustomerController {
                    .map(ResponseEntity::ok)
                    .orElse(ResponseEntity.notFound().build());
     }
+    @GetMapping
+    public List<CustomerDTO> getAllCustomers() {
+        return repo.findAll()
+                .stream()
+                .map(c -> new CustomerDTO(c.getId(), c.getName()))
+                .toList();
+    }
+
+    // DTO so frontend only sees id + name
+    public record CustomerDTO(Long id, String name) {}
 }
