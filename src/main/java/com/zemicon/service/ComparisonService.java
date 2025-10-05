@@ -34,7 +34,8 @@ public class ComparisonService {
         Customer customer = customerRepo.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
-        List<Requirement> requirements = requirementRepo.findByCustomer_Id(customerId);
+        // ✅ Fetch only OPEN requirements
+        List<Requirement> requirements = requirementRepo.findByCustomerAndStatus(customer, RequirementStatus.OPEN);
 
         ComparisonResult result = new ComparisonResult();
         result.setCustomerId(customerId);
@@ -50,7 +51,7 @@ public class ComparisonService {
             row.setQuantity(req.getQuantity());
             row.setTargetPrice(req.getTargetPrice());
 
-            // ✅ fetch all vendor responses for this requirement
+            // fetch all vendor responses for this requirement
             List<VendorResponse> responses = vendorResponseRepo.findByRequirement(req);
 
             List<VendorQuote> quotes = responses.stream().map(r -> {
@@ -65,7 +66,7 @@ public class ComparisonService {
                 return vq;
             }).collect(Collectors.toList());
 
-            // ✅ sort quotes
+            // sort quotes by unit price first, then lead time
             quotes.sort(
                 Comparator.comparing(VendorQuote::getUnitPrice, Comparator.nullsLast(Double::compare))
                           .thenComparing(VendorQuote::getLeadTimeWeeks, Comparator.nullsLast(Integer::compare))
@@ -82,6 +83,8 @@ public class ComparisonService {
         result.setRows(rows);
         return result;
     }
+
+    // update RFQ status
     public void updateRfqStatus(Long requirementId, RequirementStatus status) {
         Requirement req = requirementRepo.findById(requirementId)
                 .orElseThrow(() -> new RuntimeException("Requirement not found"));
@@ -92,5 +95,6 @@ public class ComparisonService {
         requirementRepo.save(req);
     }
 }
+
 
 

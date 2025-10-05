@@ -9,10 +9,10 @@
   body { margin:0; font-family:'Inter',Arial,sans-serif; background:linear-gradient(135deg,#3ba865,#0d8c73); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding-bottom:40px; }
   header { width:100%; background:#ffffffdd; backdrop-filter:blur(6px); box-shadow:0 2px 10px rgba(0,0,0,0.08); padding:12px 24px; display:flex; align-items:center; gap:12px; }
   header img { height:50px; }
-  header h1 { font-size:22px; color:#006f6a; margin:0; font-weight:700; }
+  header h1 { font-size:22px; color:#006f6a; margin:0; font-weight:700; flex:1; }
   .container { background:#fff; padding:28px; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.12); width:950px; margin-top:28px; animation:fadeIn .6s ease; }
-  .row { display:flex; gap:16px; margin-bottom:12px; }
-  .col { flex:1; }
+  .row { display:flex; gap:16px; margin-bottom:12px; flex-wrap:wrap; }
+  .col { flex:1; min-width:220px; }
   label { display:block; font-weight:600; margin-bottom:6px; color:#333; }
   select,input[type="text"],input[type="file"],input[type="number"]{width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;font-size:14px;}
   button { background:#008881;color:#fff;border:none;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:600;margin-right:8px;transition:background .3s; }
@@ -35,19 +35,20 @@
 <header>
   <img src="/images/zemicon.jpg" alt="Zemicon Logo" onerror="this.src='logo.png'"/>
   <h1>Zemicon Electronics — Vendor Quotes</h1>
+  <a href="index.html"><button class="secondary">⬅ Back</button></a>
 </header>
 
 <div class="container">
 
+  <!-- Upload Section -->
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
     <div style="font-weight:700; color:#006f6a; line-height:1.4;">
-      Upload Vendor Quotes<br>
-      <span style="font-size:13px; color:#555;">Upload an Excel file with latest vendor quotes (Unit Price, Lead Time, Date Code, MOQ, Remarks).</span>
+      📤 Upload Vendor Quotes<br>
+      <span style="font-size:13px; color:#555;">Upload an Excel file with vendor quotes (Unit Price, Lead Time, MOQ, etc.).</span>
     </div>
-    <div><a href="index.html" style="text-decoration:none"><button class="secondary">⬅ Back</button></a></div>
   </div>
 
-  <!-- Toggle Add Vendor -->
+  <!-- Add Vendor -->
   <div style="margin-bottom:14px;">
     <span class="toggle-link" id="showAddVendor">➕ Add New Vendor</span>
   </div>
@@ -78,7 +79,7 @@
       <label for="customerSelect">Select Customer</label>
       <select id="customerSelect"><option value="">-- Select customer --</option></select>
     </div>
-    <div style="flex:0 0 240px;">
+    <div class="col">
       <label for="file">Excel File</label>
       <input id="file" type="file" accept=".xls,.xlsx" />
     </div>
@@ -93,6 +94,7 @@
   <p style="margin-top:18px;">
     Or <a href="#" class="toggle-link" onclick="showManualQuoteForm()">➕ Add Quote Manually</a>
   </p>
+
   <div id="manualQuoteForm" class="hidden" style="margin-top:12px;">
     <h3 style="margin-bottom:10px; color:#006f6a;">📝 Manual Vendor Quote</h3>
     <div class="row"><div class="col"><label>Manufacturer</label><input type="text" id="quoteManufacturer"></div></div>
@@ -152,52 +154,18 @@
 
   // Submit Manual Quote
   async function submitManualQuote() {
-  const vendorSel = document.getElementById('vendorSelect');
-  const customerSel = document.getElementById('customerSelect');
-
-  if (!vendorSel.value || !customerSel.value) {
-    alert("❌ Please select vendor & customer first!");
-    return;
+    const vendorSel=document.getElementById('vendorSelect');
+    const customerSel=document.getElementById('customerSelect');
+    if(!vendorSel.value||!customerSel.value){alert("❌ Please select vendor & customer first!");return;}
+    const vendorName=vendorSel.options[vendorSel.selectedIndex].text.trim();
+    const customerName=customerSel.options[customerSel.selectedIndex].text.split('|').pop().trim();
+    const quote={vendorName,customerName,manufacturer:document.getElementById('quoteManufacturer').value.trim(),mpn:document.getElementById('quoteMpn').value.trim(),quantity:parseInt(document.getElementById('quoteQty').value)||0,unitPrice:parseFloat(document.getElementById('quoteUnitPrice').value)||0.0,leadTimeWeeks:parseInt(document.getElementById('quoteLeadTime').value)||0,moq:parseInt(document.getElementById('quoteMoq').value)||0,dateCode:document.getElementById('quoteDateCode').value.trim(),remarks:document.getElementById('quoteRemarks').value.trim()};
+    try{
+      const res=await fetch(`/api/vendor/add-quote`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(quote)});
+      if(res.ok){alert("✅ Vendor quote added successfully!");showManualQuoteForm();viewQuotes();}
+      else{const msg=await res.text();alert("❌ Failed to add vendor quote: "+msg);}
+    }catch(err){alert("❌ Error: "+err.message);}
   }
-
-  // Get exact vendor and customer names from the dropdown
-  const vendorName = vendorSel.options[vendorSel.selectedIndex].text.trim();
-  const customerName = customerSel.options[customerSel.selectedIndex].text.split('|').pop().trim();
-
-  // Build the quote object with proper number conversion
-  const quote = {
-    vendorName,
-    customerName,
-    manufacturer: document.getElementById('quoteManufacturer').value.trim(),
-    mpn: document.getElementById('quoteMpn').value.trim(),
-    quantity: parseInt(document.getElementById('quoteQty').value) || 0,
-    unitPrice: parseFloat(document.getElementById('quoteUnitPrice').value) || 0.0,
-    leadTimeWeeks: parseInt(document.getElementById('quoteLeadTime').value) || 0,
-    moq: parseInt(document.getElementById('quoteMoq').value) || 0,
-    dateCode: document.getElementById('quoteDateCode').value.trim(),
-    remarks: document.getElementById('quoteRemarks').value.trim()
-  };
-
-  try {
-    const res = await fetch(`/api/vendor/add-quote`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(quote)
-    });
-
-    if (res.ok) {
-      alert("✅ Vendor quote added successfully!");
-      showManualQuoteForm(); // hide the form
-      viewQuotes(); // refresh quotes table
-    } else {
-      const msg = await res.text();
-      alert("❌ Failed to add vendor quote: " + msg);
-    }
-  } catch (err) {
-    alert("❌ Error: " + err.message);
-  }
-}
-
 
   document.getElementById('viewBtn').addEventListener('click',viewQuotes);
 

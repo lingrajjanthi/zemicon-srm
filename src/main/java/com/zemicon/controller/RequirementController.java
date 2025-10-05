@@ -37,11 +37,19 @@ public class RequirementController {
 
     // Get all RFQs for customer
     @GetMapping("/by-customer/{customerName}")
-    public List<Requirement> getByCustomerName(@PathVariable String customerName) {
+    public List<Requirement> getByCustomerName(
+            @PathVariable String customerName,
+            @RequestParam(required = false) String status) {
         Customer customer = customerRepo.findByName(customerName)
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + customerName));
+
+        if (status != null && !status.isBlank()) {
+            RequirementStatus rs = RequirementStatus.valueOf(status.toUpperCase());
+            return requirementService.getByCustomerAndStatus(customer, rs);
+        }
         return requirementService.getByCustomerId(customer.getId());
     }
+
 
     // Add manual RFQ
     @PostMapping("/add")

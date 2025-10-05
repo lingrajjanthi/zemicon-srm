@@ -12,7 +12,9 @@ public interface VendorResponseRepository extends JpaRepository<VendorResponse, 
     Optional<VendorResponse> findByRequirementAndVendor(Requirement requirement, Vendor vendor);
     List<VendorResponse> findByRequirement(Requirement requirement);
     List<VendorResponse> findByRequirementIdIn(List<Long> requirementIds);
-    // helper for vendor+customer view:
+
+    // ✅ Correct query for quotes by vendor + customer
     List<VendorResponse> findByRequirement_Customer_IdAndVendor_IdOrderBySubmittedAtDesc(Long customerId, Long vendorId);
+
     List<VendorResponse> findByRequirement_Customer_IdOrderByRequirement_MpnAscSubmittedAtDesc(Long customerId);
 }
