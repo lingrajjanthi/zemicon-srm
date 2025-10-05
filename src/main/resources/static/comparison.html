@@ -2,134 +2,246 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Zemicon - Compare Quotes</title>
+  <title>Zemicon - Compare & Final L1 Quotes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { margin:0; font-family:'Inter', Arial,sans-serif; background:linear-gradient(135deg,#3ba865,#0d8c73); min-height:100vh; display:flex; flex-direction:column; align-items:center; }
-    header { width:100%; background:#ffffffdd; backdrop-filter: blur(6px); box-shadow:0 2px 10px rgba(0,0,0,0.08); padding:12px 24px; display:flex; align-items:center; justify-content:center; }
-    header img { height:50px; margin-right:12px; }
-    header h1 { font-size:22px; color:#006f6a; font-weight:700; margin:0; }
-    .container { background:#fff; padding:32px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.12); width:90%; max-width:1100px; margin-top:40px; text-align:center; animation:fadeIn 0.8s ease; }
-    @keyframes fadeIn { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
-    .field { margin:16px 0; text-align:left; }
-    label { font-weight:600; color:#222; display:block; margin-bottom:6px; }
-    select, input[type="text"] { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
-    button { background:#008881; color:#fff; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin:4px; font-size:14px; font-weight:600; transition:background 0.3s ease, transform 0.2s; }
-    button:hover { background:#006f6a; transform:translateY(-2px); }
-    table { width:100%; margin-top:24px; border-collapse:collapse; font-size:14px; border-radius:10px; overflow:hidden; }
-    th, td { border:1px solid #ddd; padding:10px; text-align:center; }
-    th { background:#008881; color:#fff; }
-    tr:nth-child(even) { background:#f9f9f9; }
-    .highlight { background:#e6f9f6; font-weight:600; }
+    body { margin:0; font-family:'Inter',Arial,sans-serif; background:linear-gradient(135deg,#3ba865,#0d8c73); min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+    header { width:100%; background:#ffffffdd; backdrop-filter: blur(6px); box-shadow:0 2px 10px rgba(0,0,0,0.08); padding:12px 24px; display:flex; align-items:center; gap:12px; }
+    header img { height:48px; }
+    header h1 { font-size:18px; color:#006f6a; margin:0; font-weight:700; flex:1; }
+    .container { width:95%; max-width:1200px; background:#fff; border-radius:12px; padding:20px; margin:28px 0; box-shadow:0 10px 30px rgba(0,0,0,0.12); }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+    select,input[type="text"],input[type="email"],input[type="number"] { padding:8px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
+    button { background:#008881; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+    button.secondary { background:#f1f1f1; color:#333; }
+    table{ width:100%; border-collapse:collapse; margin-top:14px; }
+    th,td{ border:1px solid #ddd; padding:8px; text-align:center; font-size:13px; }
+    th{ background:#008881; color:#fff; }
+    tr:nth-child(even){ background:#f7f7f7; }
+    .highlight{ background:#e6f9f6; font-weight:600; }
+    .small{ font-size:12px; color:#666; }
   </style>
 </head>
 <body>
   <header>
-    <img src="/images/zemicon.jpg" alt="Zemicon Logo" />
-    <h1>Zemicon Electronics</h1>
+    <img src="/images/zemicon.jpg" alt="Zemicon Logo" onerror="this.src='logo.png'"/>
+    <h1>Zemicon — Compare & Final L1 Quotes</h1>
+    <div>
+      <a href="index.html"><button class="secondary">⬅ Back</button></a>
+    </div>
   </header>
 
   <div class="container">
-    <div style="margin-bottom:20px; text-align:left">
-      <a href="index.html" style="color:#006f6a;font-weight:600">⬅️ Back to Dashboard</a>
+    <div class="row">
+      <label class="small" for="customerSelect">Select customer</label>
+      <select id="customerSelect"><option value="">-- Select --</option></select>
+
+      <label class="small" for="emailInput">Email (optional)</label>
+      <input type="email" id="emailInput" placeholder="Leave empty to use customer email" style="min-width:260px" />
+
+      <button id="loadBtn">🔍 Load RFQs (OPEN only)</button>
+      <button id="refreshBtn" class="secondary">🔄 Refresh</button>
     </div>
 
-    <p class="sub">⚖️ Compare Quotes (L1 & L2)</p>
-
-    <div class="field">
-      <label for="customerSelect">Select Customer</label>
-      <select id="customerSelect">
-        <option value="">-- Select Customer --</option>
-      </select>
-    </div>
-    <button id="compareBtn">🔍 Compare</button>
     <div id="results"></div>
+
+    <div id="finalActions" style="display:none; margin-top:14px; text-align:right;">
+      <button id="submitBtn">💾 Submit Changes</button>
+      <button id="sendBtn">📧 Send Final Quote</button>
+      <button id="exportBtn">⬇ Export Final Quote (XLSX)</button>
+    </div>
   </div>
 
-  <script>
-    // Load all customers into dropdown
-    async function loadCustomers() {
-      try {
-        const res = await fetch("/api/customer");
-        if (!res.ok) throw new Error("Failed to fetch customers");
-        const customers = await res.json();
-        const select = document.getElementById("customerSelect");
-        customers.forEach(c => {
-          const opt = document.createElement("option");
-          opt.value = c.id;      // numeric ID
-          opt.textContent = c.name; // display name
-          select.appendChild(opt);
-        });
-      } catch (err) {
-        alert("Error loading customers: " + err.message);
-      }
-    }
-    loadCustomers();
+<script>
+async function fetchJson(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(await res.text() || res.statusText);
+  return res.json();
+}
 
-    // Compare button click
-    document.getElementById('compareBtn').addEventListener('click', async function () {
-      const customerId = document.getElementById('customerSelect').value;
-      if (!customerId) {
-        alert("Please select a customer");
-        return;
-      }
-      try {
-        const res = await fetch(`/api/comparison/${customerId}`);
-        if (!res.ok) throw new Error("Failed to fetch comparison");
-        const data = await res.json();
-
-        let html = `<h3>Customer: ${data.customerName}</h3>`;
-        html += "<table><thead><tr><th>Manufacturer</th><th>MPN</th><th>Qty</th><th>Target</th><th>Quotes</th><th>L1</th><th>L2</th><th>Status</th></tr></thead><tbody>";
-
-        data.rows.forEach(r => {
-          let vendorHtml = "";
-          if (r.vendorQuotes && r.vendorQuotes.length > 0) {
-            r.vendorQuotes.forEach(q => {
-              vendorHtml += `<div><b>${q.vendorName}</b>: ₹${q.unitPrice || "-"} / ${q.leadTimeWeeks || "-"}w (MOQ:${q.moq || "-"})</div>`;
-            });
-          } else {
-            vendorHtml = "NA";
-          }
-
-          html += `<tr>
-            <td>${r.manufacturer || ""}</td>
-            <td>${r.mpn || ""}</td>
-            <td>${r.quantity || ""}</td>
-            <td>${r.targetPrice || ""}</td>
-            <td>${vendorHtml}</td>
-            <td class="highlight">${r.l1Vendor ? r.l1Vendor.vendorName + " (₹" + r.l1Vendor.unitPrice + ")" : "-"}</td>
-            <td class="highlight">${r.l2Vendor ? r.l2Vendor.vendorName + " (₹" + r.l2Vendor.unitPrice + ")" : "-"}</td>
-            <td>
-              <select id="status-${r.requirementId}">
-                <option value="NEW" ${r.status === "NEW" ? "selected" : ""}>NEW</option>
-                <option value="OPEN" ${r.status === "OPEN" ? "selected" : ""}>OPEN</option>
-                <option value="COMPLETED" ${r.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
-              </select>
-              <button onclick="updateStatus(${r.requirementId})">Update</button>
-            </td>
-          </tr>`;
-        });
-
-        html += "</tbody></table>";
-        document.getElementById('results').innerHTML = html;
-
-      } catch (err) {
-        document.getElementById('results').innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
-      }
+// populate customers
+async function loadCustomers() {
+  try {
+    const customers = await fetchJson('/api/customer');
+    const sel = document.getElementById('customerSelect');
+    sel.innerHTML = '<option value="">-- Select --</option>';
+    customers.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name + (c.customerCode ? ` (${c.customerCode})` : '');
+      if (c.email) opt.dataset.email = c.email;
+      sel.appendChild(opt);
     });
+  } catch (err) {
+    alert('Error loading customers: ' + err.message);
+  }
+}
+loadCustomers();
 
-    // Update RFQ status
-    async function updateStatus(requirementId) {
-      const status = document.getElementById(`status-${requirementId}`).value;
-      try {
-        const res = await fetch(`/api/comparison/update-status/${requirementId}?status=${status}`, { method: "PUT" });
-        const msg = await res.text();
-        alert(msg);
-      } catch (err) {
-        alert("Failed to update status: " + err.message);
-      }
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  loadCustomers();
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('finalActions').style.display = 'none';
+});
+
+// Load OPEN RFQs
+document.getElementById('loadBtn').addEventListener('click', async () => {
+  const customerId = document.getElementById('customerSelect').value;
+  if (!customerId) { alert('Please select customer'); return; }
+
+  try {
+    const data = await fetchJson(`/api/comparison/${customerId}`);
+    let html = `<h3>Customer: ${data.customerName || ''}</h3>`;
+    html += `<table><thead>
+      <tr>
+        <th>#</th>
+        <th>Manufacturer</th>
+        <th>MPN</th>
+        <th>Qty</th>
+        <th>Target</th>
+        <th>Vendor Quotes (Unit / LT / MOQ)</th>
+        <th>L1 Select</th>
+        <th>Markup %</th>
+        <th>Final</th>
+        <th>Status</th>
+      </tr></thead><tbody>`;
+
+    if (!data.rows || data.rows.length === 0) {
+      html += `<tr><td colspan="10" class="small">No OPEN requirements for this customer.</td></tr>`;
+    } else {
+      data.rows.forEach((r, idx) => {
+        const quotes = Array.isArray(r.vendorQuotes) ? r.vendorQuotes : (r.vendorQuotes ? Object.values(r.vendorQuotes) : []);
+        let l1 = null;
+        quotes.forEach(q => { if (!l1 || (q.unitPrice != null && q.unitPrice < l1.unitPrice)) l1 = q; });
+
+        const vendorList = quotes.length ? quotes.map(q => {
+          const lt = q.leadTimeWeeks ?? q.leadTime ?? '-';
+          const moq = q.moq ?? '-';
+          return `${q.vendorName} ₹${q.unitPrice ?? '-'} / ${lt}w / MOQ:${moq}`;
+        }).join('<br>') : 'No quotes yet';
+
+        const selectOptions = quotes.length ?
+          quotes.map(q => `<option value="${encodeURIComponent(JSON.stringify({unitPrice: q.unitPrice, vendorName:q.vendorName}))}" ${l1 && q.vendorName===l1.vendorName ? 'selected' : ''}>${q.vendorName} — ₹${q.unitPrice ?? '-'}</option>`).join('')
+          : '<option value="">-</option>';
+
+        const finalVal = l1 ? (l1.unitPrice).toFixed(2) : '-';
+        const currentStatus = r.status ?? 'OPEN';
+
+        html += `<tr data-reqid="${r.requirementId}">
+          <td>${idx+1}</td>
+          <td>${r.manufacturer || ''}</td>
+          <td>${r.mpn || ''}</td>
+          <td>${r.quantity || ''}</td>
+          <td>${r.targetPrice ?? ''}</td>
+          <td style="text-align:left">${vendorList}</td>
+          <td><select id="l1-${r.requirementId}" onchange="updateFinal(${r.requirementId})">${selectOptions}</select></td>
+          <td><input type="number" id="markup-${r.requirementId}" value="0" min="0" step="0.1" onchange="updateFinal(${r.requirementId})" style="width:80px;"></td>
+          <td id="final-${r.requirementId}" class="highlight">₹${finalVal}</td>
+          <td>
+            <select id="status-${r.requirementId}">
+              <option value="OPEN" ${currentStatus==='OPEN'?'selected':''}>OPEN</option>
+              <option value="CLOSED" ${currentStatus==='CLOSED'?'selected':''}>CLOSED</option>
+            </select>
+          </td>
+        </tr>`;
+      });
     }
-  </script>
+
+    html += `</tbody></table>`;
+    document.getElementById('results').innerHTML = html;
+    document.getElementById('finalActions').style.display = (data.rows && data.rows.length>0) ? 'block' : 'none';
+
+    const sel = document.getElementById('customerSelect');
+    const defaultEmail = sel.selectedOptions[0]?.dataset?.email || '';
+    document.getElementById('emailInput').value = defaultEmail;
+
+  } catch (err) {
+    alert('Failed to load RFQs: ' + err.message);
+  }
+});
+
+// update final with markup
+function updateFinal(requirementId) {
+  const sel = document.getElementById(`l1-${requirementId}`);
+  const markup = parseFloat(document.getElementById(`markup-${requirementId}`).value || 0);
+  if (!sel || !sel.value) {
+    document.getElementById(`final-${requirementId}`).textContent = '₹-';
+    return;
+  }
+  const obj = JSON.parse(decodeURIComponent(sel.value));
+  const base = parseFloat(obj.unitPrice || 0);
+  const finalVal = base * (1 + (markup/100 || 0));
+  document.getElementById(`final-${requirementId}`).textContent = '₹' + finalVal.toFixed(2);
+}
+
+// ✅ Manual Submit Button — update all statuses manually
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const rows = document.querySelectorAll('#results tbody tr[data-reqid]');
+  if (!rows.length) return alert('No rows to update.');
+
+  try {
+    for (const row of rows) {
+      const reqId = row.getAttribute('data-reqid');
+      const status = document.getElementById(`status-${reqId}`).value;
+      await fetch(`/api/comparison/update-status/${reqId}?status=${status}`, { method: 'PUT' });
+    }
+    alert('Statuses updated successfully.');
+    document.getElementById('loadBtn').click(); // refresh list
+  } catch (err) {
+    alert('Error updating statuses: ' + err.message);
+  }
+});
+
+// send final quote (no auto close)
+document.getElementById('sendBtn').addEventListener('click', async () => {
+  try {
+    const request = buildFinalQuoteRequest();
+    if (!request.items.length) { alert('No final items to send'); return; }
+    const res = await fetch('/api/final-quotes/send', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(request) });
+    if (!res.ok) throw new Error(await res.text());
+    alert(await res.text() || 'Sent successfully');
+  } catch (err) {
+    alert('Failed to send final quote: ' + err.message);
+  }
+});
+
+// export XLSX (no auto close)
+document.getElementById('exportBtn').addEventListener('click', async () => {
+  try {
+    const request = buildFinalQuoteRequest();
+    if (!request.items.length) { alert('No final items to export'); return; }
+    const res = await fetch('/api/final-quotes/export', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(request) });
+    if (!res.ok) throw new Error(await res.text());
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Final_Quote.xlsx';
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    alert('Export successful (statuses unchanged)');
+  } catch (err) {
+    alert('Failed to export: ' + err.message);
+  }
+});
+
+// helper to build payload
+function buildFinalQuoteRequest() {
+  const customerId = parseInt(document.getElementById('customerSelect').value);
+  let email = (document.getElementById('emailInput').value || '').trim();
+  if (!email) email = document.getElementById('customerSelect').selectedOptions[0]?.dataset?.email || '';
+  const rows = document.querySelectorAll('#results tbody tr[data-reqid]');
+  const items = [];
+  rows.forEach(row => {
+    const reqId = parseInt(row.getAttribute('data-reqid'));
+    const finalText = document.getElementById(`final-${reqId}`).textContent.replace('₹','').trim();
+    const final = parseFloat(finalText) || 0;
+    if (final > 0) items.push({ requirementId: reqId, finalQuote: final });
+  });
+  return { customerId, email, items };
+}
+</script>
 </body>
 </html>

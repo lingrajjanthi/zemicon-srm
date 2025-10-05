@@ -124,6 +124,9 @@ public class RequirementService {
 	public java.util.Optional<Requirement> getById(Long id) {
 	    return repo.findById(id);
 	}
-
+	
+	public List<Requirement> getByCustomerAndStatus(Customer customer, RequirementStatus status) {
+	    return repo.findByCustomerAndStatus(customer, status);
+	}
 
 }

@@ -1,5 +1,6 @@
 package com.zemicon.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,16 +22,26 @@ public class ComparisonController {
         this.service = service;
     }
 
+    // GET /api/comparison/{customerId} => returns only OPEN requirements
     @GetMapping("/{customerId}")
-    public ComparisonResult compare(@PathVariable Long customerId) {
-        return service.compareByCustomer(customerId);
+    public ResponseEntity<ComparisonResult> compare(@PathVariable Long customerId) {
+        try {
+            ComparisonResult result = service.compareByCustomer(customerId);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(404).body(null);
+        }
     }
 
+    // PUT /api/comparison/update-status/{requirementId}?status=CLOSED
     @PutMapping("/update-status/{requirementId}")
-    public String updateStatus(@PathVariable Long requirementId, @RequestParam String status) {
-        RequirementStatus enumStatus = RequirementStatus.valueOf(status.toUpperCase());
-        service.updateRfqStatus(requirementId, enumStatus);
-        return "✅ Requirement " + requirementId + " updated to status " + enumStatus;
+    public ResponseEntity<String> updateStatus(@PathVariable Long requirementId, @RequestParam String status) {
+        try {
+            RequirementStatus enumStatus = RequirementStatus.valueOf(status.toUpperCase());
+            service.updateRfqStatus(requirementId, enumStatus);
+            return ResponseEntity.ok("✅ Requirement " + requirementId + " updated to status " + enumStatus);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body("Invalid status: " + status);
+        }
     }
-
 }
