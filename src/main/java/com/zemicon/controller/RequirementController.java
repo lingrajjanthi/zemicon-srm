@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.zemicon.dto.ManualRFQRequest;
 import com.zemicon.model.Customer;
 import com.zemicon.model.Requirement;
 import com.zemicon.model.RequirementStatus;
@@ -53,21 +54,22 @@ public class RequirementController {
 
     // Add manual RFQ
     @PostMapping("/add")
-    public ResponseEntity<String> addManualRFQ(@RequestParam String customerName,
-                                               @RequestBody Requirement req) {
-        Customer customer = customerRepo.findByName(customerName)
-                .orElseThrow(() -> new RuntimeException("Customer not found: " + customerName));
+    public ResponseEntity<String> addManualRFQ(@RequestBody ManualRFQRequest payload) {
+        Customer customer = customerRepo.findByName(payload.getCustomerName())
+                .orElseThrow(() -> new RuntimeException("Customer not found: " + payload.getCustomerName()));
 
+        Requirement req = new Requirement();
         req.setCustomer(customer);
-
-        // Default to NEW if no status provided
-        if (req.getStatus() == null) {
-            req.setStatus(RequirementStatus.NEW);
-        }
+        req.setManufacturer(payload.getManufacturer());
+        req.setMpn(payload.getMpn());
+        req.setQuantity(payload.getQuantity());
+        req.setTargetPrice(payload.getTargetPrice());
+        req.setRemarks(payload.getRemarks());
+        req.setStatus(payload.getStatus() != null ? payload.getStatus() : RequirementStatus.OPEN);
 
         requirementService.saveRequirement(req);
 
-        return ResponseEntity.ok("RFQ added manually for customer: " + customerName);
+        return ResponseEntity.ok("RFQ added manually for customer: " + payload.getCustomerName());
     }
 
     // Update RFQ status (e.g., close it)
