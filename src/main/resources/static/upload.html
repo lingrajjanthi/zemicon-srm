@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 	<meta charset="UTF-8">
 	<title>Zemicon - Upload RFQ</title>
@@ -123,8 +122,7 @@
 			font-size: 14px;
 		}
 
-		th,
-		td {
+		th, td {
 			border: 1px solid #ddd;
 			padding: 10px;
 			text-align: center;
@@ -209,6 +207,7 @@
 
 		<div id="reqList" class="section hidden"></div>
 
+		<!-- Manual RFQ -->
 		<div id="manualRFQForm" class="section hidden">
 			<h3>➕ Add Manual RFQ</h3>
 			<div class="field"><label>Manufacturer</label><input id="rfqManufacturer"></div>
@@ -225,6 +224,7 @@
 			<button class="action" onclick="addManualRFQ()">💾 Save RFQ</button>
 		</div>
 
+		<!-- Add Customer -->
 		<div id="addCustomerForm" class="section hidden">
 			<h3>📝 Register New Customer</h3>
 			<div class="field"><label>Name</label><input type="text" id="newName"></div>
@@ -334,7 +334,94 @@ async function updateStatus(id, status){
 	}catch(e){alert('Failed to update status');}
 }
 
-// Manual RFQ, Add Customer, View All Customers functions remain unchanged
+/* --- ADD CUSTOMER --- */
+function showAddCustomerForm() {
+	hideAllSections();
+	document.getElementById('addCustomerForm').classList.remove('hidden');
+}
+
+async function addCustomer() {
+	const name = document.getElementById('newName').value.trim();
+	const email = document.getElementById('newEmail').value.trim();
+	const phone = document.getElementById('newPhone').value.trim();
+	const city = document.getElementById('newCity').value.trim();
+	const country = document.getElementById('newCountry').value.trim();
+
+	if (!name || !email) {alert("Name and Email are required!"); return;}
+
+	try {
+		const res = await fetch('/api/customer/add', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({name, email, phone, city, country})
+		});
+		if (res.ok) {
+			const data = await res.json();
+			alert(`✅ Customer added successfully: ${data.customerCode}`);
+			loadCustomers();
+			hideAllSections();
+		} else {
+			const err = await res.text();
+			alert(`❌ Error: ${err}`);
+		}
+	} catch (err) {console.error(err);}
+}
+
+/* --- VIEW ALL CUSTOMERS --- */
+async function viewAllCustomers() {
+	hideAllSections();
+	try {
+		const res = await fetch('/api/customer/all');
+		const customers = await res.json();
+		let html = "<h3>📋 All Customers</h3>";
+		html += "<table><thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Phone</th><th>City</th><th>Country</th></tr></thead><tbody>";
+		customers.forEach(c => {
+			html += `<tr>
+				<td>${c.customerCode}</td>
+				<td>${c.name}</td>
+				<td>${c.email}</td>
+				<td>${c.phone || ""}</td>
+				<td>${c.city || ""}</td>
+				<td>${c.country || ""}</td>
+			</tr>`;
+		});
+		html += "</tbody></table>";
+		const listDiv = document.getElementById('customerList');
+		listDiv.innerHTML = html;
+		listDiv.classList.remove('hidden');
+	} catch (err) {console.error(err);}
+}
+
+/* --- ADD MANUAL RFQ --- */
+async function addManualRFQ() {
+	const customerName = document.getElementById('customer').value.trim();
+	if (!customerName) {alert("Select a customer first!"); return;}
+
+	const rfq = {
+		customerName,
+		manufacturer: document.getElementById('rfqManufacturer').value,
+		mpn: document.getElementById('rfqMpn').value,
+		quantity: document.getElementById('rfqQty').value,
+		targetPrice: document.getElementById('rfqTargetPrice').value,
+		remarks: document.getElementById('rfqRemarks').value,
+		status: document.getElementById('rfqStatus').value
+	};
+
+	try {
+		const res = await fetch('/api/requirements/add', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify(rfq)
+		});
+		if (res.ok) {
+			alert("✅ Manual RFQ added successfully!");
+			document.getElementById('manualRFQForm').classList.add('hidden');
+		} else {
+			const err = await res.text();
+			alert(`❌ Error: ${err}`);
+		}
+	} catch (err) {console.error(err);}
+}
 </script>
 </body>
 </html>

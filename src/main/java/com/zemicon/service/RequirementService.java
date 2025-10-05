@@ -56,7 +56,7 @@ public class RequirementService {
 					r.setQuantity(quantity);
 					r.setTargetPrice(targetPrice);
 					r.setRemarks(remarks);
-					r.setStatus(RequirementStatus.NEW);
+					r.setStatus(RequirementStatus.OPEN);
 					repo.save(r);
 				});
 			}
@@ -66,7 +66,7 @@ public class RequirementService {
 	}
 
 	public Requirement saveRequirement(Requirement req) {
-		req.setStatus(RequirementStatus.NEW);
+		req.setStatus(RequirementStatus.OPEN);
 		req.setCreatedAt(LocalDateTime.now());
 		return repo.save(req);
 	}
